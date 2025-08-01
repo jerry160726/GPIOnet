@@ -70,13 +70,13 @@ int main()
             const char* msg = states[state_index];      // 從states[]陣列中，取出目前的控制字串（如 "01"）
             send(new_fd, msg, strlen(msg), 0);          // 將字串msg透過TCP socket傳給client
             printf("Button pressed. Sent: %s\n", msg);
-            state_index = (state_index + 1) % 4;
+            state_index = (state_index + 1) % 4;        // 每按一次按鈕就會將狀態循環切換：讓它循環在0~3之間
 
-            delay(300); // 防彈跳用
+            delay(300);     // 防彈跳用
         }
 
-        last_state = current;
-        delay(10); // loop delay
+        last_state = current;                           // 儲存這輪的狀態（供下一輪比對）
+        delay(10); // 每次loop等10ms，不要跑太快
     }
 
     close(new_fd);
