@@ -1,34 +1,35 @@
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/kdev_t.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/delay.h>
-#include <linux/uaccess.h> //copy_to/from_user()
-#include <linux/gpio.h>    //GPIO
-#include <linux/err.h>
+#include <linux/kernel.h>   // printk()與核心訊息
+#include <linux/init.h>     // __init, __exit marco
+#include <linux/module.h>   // 模組初始化/卸載相關
+#include <linux/kdev_t.h>   // 裝置號管理：major/minor marco
+#include <linux/fs.h>        // file_operations結構
+#include <linux/cdev.h>     // character device 結構與註冊
+#include <linux/device.h>   // device_create, class_create等函式
+#include <linux/delay.h>    // mdelay, udelay
+#include <linux/uaccess.h>  // copy_to_user, copy_from_user
+#include <linux/gpio.h>     // 所有GPIO控制用函式
+#include <linux/err.h>      // 錯誤代碼處理
 
-// character device driver
-
+// 指定使用GPIO pin 5和6（BCM編號）
 #define GPIO_5 (5)
 #define GPIO_6 (6)
 
-dev_t dev = 0;
-static struct class *dev_class;
-static struct cdev gpio_cdev;
+dev_t dev = 0;                      // 儲存 major/minor裝置號。
+static struct class *dev_class;     // 用來建立/sys/class/與/dev/gpio_device
+static struct cdev gpio_cdev;       // character device的核心結構
 
+// 載入模組時執行 / 卸載模組時執行
 static int __init gpio_driver_init(void);
 static void __exit gpio_driver_exit(void);
 
-/*************** Driver functions **********************/
+/*************** 當/dev/gpio_device被打開、讀寫、關閉時該怎麼做 **********************/
 static int gpio_open(struct inode *inode, struct file *file);
 static int gpio_release(struct inode *inode, struct file *file);
 static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t *off);
 static ssize_t gpio_write(struct file *filp, const char *buf, size_t len, loff_t *off);
-/******************************************************/
+/**********************************************************************************/
 
+// 驅動的對外API表，提供給User space（echo 10 > /dev/gpio_device）使用
 static struct file_operations fops =
     {
         .owner = THIS_MODULE,
