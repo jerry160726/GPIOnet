@@ -50,7 +50,7 @@ int main()
     printf("Server started on %s:%d\nWaiting for connection...\n", host, port);
 
     socklen_t addrlen = sizeof(client_addr);
-    int new_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &addrlen);
+    int new_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &addrlen);    // 等待client來連線
     if (new_fd == -1) {
         perror("Accept error");
         return 1;
