@@ -75,8 +75,8 @@ int main()
             delay(300);     // 防彈跳用
         }
 
-        last_state = current;                           // 儲存這輪的狀態（供下一輪比對）
-        delay(10); // 每次loop等10ms，不要跑太快
+        last_state = current;       // 儲存這輪的狀態（供下一輪比對）
+        delay(10);      // 每次loop等10ms，不要跑太快
     }
 
     close(new_fd);
