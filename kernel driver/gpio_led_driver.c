@@ -84,16 +84,15 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
 static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
 {
 
-    uint8_t rec_buf[10] = {0};   // 00 01 10 11
+    uint8_t rec_buf[10] = {0};   // 建立一個緩衝區來儲存使用者送過來的資料（最長處理3 byte，例如"11\n"）
 
-    // 允許傳入 2 或 3 個位元組（包含換行 \n）
+    // 檢查資料長度與內容有效性
     if (len < 2 || len > 3)
     {
         pr_err("ERROR: Expected 2 or 3 bytes, got %zu\n", len);
         return -EINVAL;
     }
 
-    // 嘗試複製前最多 3 個 byte
     if (copy_from_user(rec_buf, buf, len))
     {
         pr_err("ERROR: Failed to copy from user\n");
@@ -105,6 +104,7 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
         rec_buf[2] = '\0';
     }
 
+    // 第一個字元控制GPIO_5的電位
     if(rec_buf[0] == '1'){
         gpio_set_value(GPIO_5, 1);
         pr_err("GPIO_5 work!!");
@@ -113,6 +113,7 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
         pr_err("GPIO_5 not work!!");
     }
 
+    //第二個字元控制GPIO_6的電位
     if(rec_buf[1] == '1'){
         gpio_set_value(GPIO_6, 1);
         pr_err("GPIO_6 work!!");
@@ -124,17 +125,17 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
     return len;
 }
 
+// 初始化函式：載入模組時呼叫
 static int __init gpio_driver_init(void)
 {
-    /*Allocating Major number*/
-    if ((alloc_chrdev_region(&dev, 0, 1, "gpio_Dev")) < 0)
+    if ((alloc_chrdev_region(&dev, 0, 1, "gpio_Dev")) < 0)      // 分配裝置號
     {
         pr_err("Cannot allocate major number\n");
         goto r_unreg;
     }
     pr_info("Major = %d Minor = %d \n", MAJOR(dev), MINOR(dev));
 
-    /*Creating cdev structure*/
+    /*註冊character device*/
     cdev_init(&gpio_cdev, &fops);
 
     /*Adding character device to the system*/
@@ -144,21 +145,24 @@ static int __init gpio_driver_init(void)
         goto r_del;
     }
 
-    /*Creating struct class*/
+    // 在/sys/class/下建立一個名為"gpio_class"的類別資料夾
+    // 系統會產生目錄/sys/class/gpio_class/
     if (IS_ERR(dev_class = class_create(THIS_MODULE, "gpio_class")))
     {
         pr_err("Cannot create the struct class\n");
         goto r_class;
     }
 
-    /*Creating device*/
+    // 在/sys/class/gpio_class/gpio_device/建立sysfs節點
+    // 建立 /sys/class/gpio_class/gpio_device/
+    // /dev/gpio_device  ← (由udev自動建立)
     if (IS_ERR(device_create(dev_class, NULL, dev, NULL, "gpio_device")))
     {
         pr_err("Cannot create the Device \n");
         goto r_device;
     }
 
-    // Checking the GPIO is valid or not
+    // 檢查與請求GPIO
     if (gpio_is_valid(GPIO_5) == false)
     {
         pr_err("GPIO %d is not valid\n", GPIO_5);
@@ -170,7 +174,7 @@ static int __init gpio_driver_init(void)
         goto r_device;
     }
 
-    // Requesting the GPIO
+    // 檢查與請求GPIO
     if (gpio_request(GPIO_5, "GPIO_5") < 0)
     {
         pr_err("ERROR: GPIO %d request\n", GPIO_5);
@@ -186,10 +190,6 @@ static int __init gpio_driver_init(void)
     gpio_direction_output(GPIO_5, 0);
     gpio_direction_output(GPIO_6, 0);
 
-    /*
-    echo 1000 > /dev/test
-    echo 0000 > /dev/test
-    */
     gpio_export(GPIO_5, false);
     gpio_export(GPIO_6, false);
 
@@ -211,6 +211,7 @@ r_unreg:
     return -1;
 }
 
+// 卸載模組：釋放資源
 static void __exit gpio_driver_exit(void)
 {
     gpio_unexport(GPIO_5);
@@ -225,6 +226,7 @@ static void __exit gpio_driver_exit(void)
     pr_info("Device Driver Remove...Done!!\n");
 }
 
+/*這些Marco讓kernel知道載入、卸載的對應函式，同時提供作者資訊與描述，可用modinfo查看*/
 module_init(gpio_driver_init);
 module_exit(gpio_driver_exit);
 
