@@ -197,6 +197,8 @@ static int __init gpio_driver_init(void)
     pr_info("Device Driver Insert...Done!!!\n");
     return 0;
 
+// 這一段是錯誤處理與清理的標準寫法，確保若初始化過程中失敗，所有已配置的資源都會正確釋放。
+// 系統不會留下殘留裝置、GPIO佔用、class節點等。
 r_gpio:
     gpio_free(GPIO_5);
     gpio_free(GPIO_6);
