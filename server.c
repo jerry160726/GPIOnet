@@ -63,12 +63,12 @@ int main()
     // 3. 持續檢查按鈕狀態
     int last_state = 1;
     while (1) {
-        int current = digitalRead(BUTTON_PIN);
+        int current = digitalRead(BUTTON_PIN);      // 讀取按鈕的目前狀態
 
         // 檢查是否按下（由高到低）
         if (last_state == 1 && current == 0) {
-            const char* msg = states[state_index];
-            send(new_fd, msg, strlen(msg), 0);
+            const char* msg = states[state_index];      // 從states[]陣列中，取出目前的控制字串（如 "01"）
+            send(new_fd, msg, strlen(msg), 0);          // 將字串msg透過TCP socket傳給client
             printf("Button pressed. Sent: %s\n", msg);
             state_index = (state_index + 1) % 4;
 
