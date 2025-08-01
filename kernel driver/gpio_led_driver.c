@@ -39,6 +39,7 @@ static struct file_operations fops =
         .release = gpio_release,
 };
 
+// 每次open() / close()裝置檔都會紀錄訊息。
 static int gpio_open(struct inode *inode, struct file *file)
 {
     pr_info("Device File Opened...!!!\n");
@@ -54,9 +55,9 @@ static int gpio_release(struct inode *inode, struct file *file)
 static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
 {
     
-    uint8_t gpio_states[2];     // 2bit : 0 1 紀錄GPIO狀態
+    uint8_t gpio_states[2];      // 儲存GPIO_5和GPIO_6狀態
 
-    // 讀取 GPIO 狀態
+    // 讀取實體腳位的電位（0或1）
     gpio_states[0] = gpio_get_value(GPIO_5);
     gpio_states[1] = gpio_get_value(GPIO_6);
 
@@ -77,7 +78,7 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
     pr_info("Read GPIO: 5=%d, 6=%d\n",
             gpio_states[0], gpio_states[1]);
 
-    return 2;
+    return 2;       // 成功的話回傳2 bytes：GPIO_5和GPIO_6狀態
 }
 
 static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
