@@ -14,13 +14,13 @@ const char* device_path = "/dev/gpio_device"; // GPIO device file
 
 // 控制 GPIO 的 function
 void write_to_gpio(const char* state) {
-    int fd = open(device_path, O_WRONLY);
+    int fd = open(device_path, O_WRONLY);   // kernel driver裡的gpio_open()。經由/dev/gpio_device和driver溝通。
     if (fd == -1) {
         perror("Failed to open /dev/gpio_device");
         return;
     }
 
-    if (write(fd, state, strlen(state)) < 0) {
+    if (write(fd, state, strlen(state)) < 0) {  // 把字串state（"01"）寫入開啟的裝置檔案，觸發kernel的gpio_write()。
         perror("Failed to write to GPIO device");
     } else {
         printf("GPIO write: %s\n", state);
