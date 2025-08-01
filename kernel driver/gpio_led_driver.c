@@ -90,7 +90,7 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
     if (len < 2 || len > 3)
     {
         pr_err("ERROR: Expected 2 or 3 bytes, got %zu\n", len);
-        return -EINVAL;
+        return -EINVAL;         // 代表"Invalid argument"（無效參數）
     }
 
     if (copy_from_user(rec_buf, buf, len))
@@ -128,7 +128,8 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
 // 初始化函式：載入模組時呼叫
 static int __init gpio_driver_init(void)
 {
-    if ((alloc_chrdev_region(&dev, 0, 1, "gpio_Dev")) < 0)      // 分配裝置號
+    // 註冊一個character device。向kernel要一組major/minor裝置號碼，註冊這個character device（gpio_Dev）
+    if ((alloc_chrdev_region(&dev, 0, 1, "gpio_Dev")) < 0)
     {
         pr_err("Cannot allocate major number\n");
         goto r_unreg;
@@ -138,7 +139,7 @@ static int __init gpio_driver_init(void)
     /*註冊character device*/
     cdev_init(&gpio_cdev, &fops);
 
-    /*Adding character device to the system*/
+    /*你的character device驅動gpio_cdev。對應的裝置號為dev（含major和minor）*/
     if ((cdev_add(&gpio_cdev, dev, 1)) < 0)
     {
         pr_err("Cannot add the device to the system\n");
@@ -155,7 +156,7 @@ static int __init gpio_driver_init(void)
 
     // 在/sys/class/gpio_class/gpio_device/建立sysfs節點
     // 建立 /sys/class/gpio_class/gpio_device/
-    // /dev/gpio_device  ← (由udev自動建立)
+    // /dev/gpio_device  ← (由udev自動建立) 背後對應你的驅動
     if (IS_ERR(device_create(dev_class, NULL, dev, NULL, "gpio_device")))
     {
         pr_err("Cannot create the Device \n");
